@@ -3,6 +3,6 @@ project(rmc_parser VERSION 0.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include(external/external.cmake)
+include(external/external_cmake)
 
 add_executable(sample main.cpp)
