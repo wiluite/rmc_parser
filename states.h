@@ -110,10 +110,13 @@ namespace serial
 //            std::cout << this << std::endl;
             std::array<char, 2> crlf_seq {'\x0D', '\x0A'};
             auto _ = std::search (machine_.begin(), machine_.end(), crlf_seq.begin(), crlf_seq.end());
+            auto inc_iter = std::begin(machine_);
             if (_ == machine_.end())
             {
                 while (machine_.size() > 1)
                 {
+                    machine_.strict_align(++inc_iter);
+
                     //machine_.align();
                 }
                 return false;
