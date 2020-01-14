@@ -6,6 +6,7 @@
 #define RMC_PARSER_STATES_H
 #include <memory>
 #include <iostream>
+#include <ring_iter.h>
 
 namespace serial
 {
@@ -47,14 +48,14 @@ namespace serial
 
         bool parse() noexcept override
         {
-            auto const find_result = std::find(std::begin(machine_), machine_.end(), '$');
-            if (find_result == machine_.end())
+            auto const __ = std::find(std::begin(machine_), machine_.end(), '$');
+            if (__ == machine_.end())
             {
                 machine_.align();
                 return false;
             } else
             {
-                machine_.align(find_result);
+                machine_.align(__);
                 machine_.set_state(machine_.get_parse_rmc_state()); // cleanup call here
                 return true;
             }
@@ -78,19 +79,18 @@ namespace serial
         {
             if (machine_.size() >= 5)
             {
-                std::array<char, 3> rmc_seq {'R', 'M', 'C'};
-                auto _ = std::search (machine_.begin(), machine_.end(), rmc_seq.begin(), rmc_seq.end());
-                if ((_ == machine_.end()) || (machine_.distance(machine_.get_start(), _) != 2))
+                std::array<char, 3> const rmc_seq {'R', 'M', 'C'};
+                auto __ = std::search (machine_.begin(), machine_.end(), rmc_seq.begin(), rmc_seq.end());
+                if ((__ == machine_.end()) || (machine_.distance(machine_.get_start(), __) != 2))
                 {
                     machine_.align();
                     machine_.set_state(machine_.get_parse_$_state());
-                    return false;
                 } else
                 {
-                    machine_.align(++++_);
+                    machine_.align(++++__);
                     machine_.set_state(machine_.get_parse_crlf_state());
-                    return true;
                 }
+                return true;
             }
             return false;
         }
@@ -101,29 +101,74 @@ namespace serial
     {
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
+        const uint8_t max_search_size = 82;
+        uint8_t search_size = 0;
+        bool on_max_search_size() noexcept
+        {
+            if (search_size > max_search_size) {
+                machine_.align();
+                machine_.set_state(machine_.get_parse_$_state());
+                return true;
+            }
+            return false;
+        }
     public:
         explicit ParseCrlfState (typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
 
         bool parse() noexcept override
         {
-//            std::cout << "size " << machine_.size() << std::endl;
-//            std::cout << this << std::endl;
-            std::array<char, 2> crlf_seq {'\x0D', '\x0A'};
-            auto _ = std::search (machine_.begin(), machine_.end(), crlf_seq.begin(), crlf_seq.end());
-            auto inc_iter = std::begin(machine_);
-            if (_ == machine_.end())
+            std::array<char, 2> const crlf_seq {'\x0D', '\x0A'};
+            auto __ = std::search (machine_.begin(), machine_.end(), crlf_seq.begin(), crlf_seq.end());
+
+            if (__ == machine_.end())
             {
+                auto inc_iter = std::begin(machine_);
                 while (machine_.size() > 1)
                 {
                     machine_.strict_align(++inc_iter);
-
-                    //machine_.align();
+                    ++search_size;
                 }
-                return false;
+                return on_max_search_size();
+            } else
+            {
+                machine_.save_stop(__);
+                machine_.align(++__);
+                machine_.set_state(machine_.get_parse_checksum_state());
+                std::cout << *machine_.get_start() << std::endl;
+//                __try
+//                {
+//                    //machine_.strict_align(machine_.get_start());
+//                    std::cout << "dist " << machine_.distance(machine_.get_start(), __) << std::endl;
+//                }
+//                catch(funny_it::out_of_bounds & ex)
+//                {
+//                    std::cout << "funny_it::out_of_bounds\n";
+//                }
+                return true;
             }
-            return false;
+        }
+
+        void cleanup() noexcept final
+        {
+            search_size = 0;
         }
     };
+
+    template <typename MACHINE>
+    class ParseChecksumState final : public parent_state<MACHINE>
+    {
+        using parent_class_type = parent_state<MACHINE>;
+        using parent_class_type::machine_;
+    public:
+        explicit ParseChecksumState(typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
+
+        bool parse() noexcept override
+        {
+            return false;
+        }
+
+    };
+
 }
 
 #endif //RMC_PARSER_STATES_H

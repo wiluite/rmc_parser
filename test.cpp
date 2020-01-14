@@ -61,9 +61,9 @@ BOOST_AUTO_TEST_CASE( test_insufficient_rmc_and_same_state )
     char external_buffer[10] = {'1','2','3','4','5','6','$','G','P','R'};
 
     m.fill_data(external_buffer, sizeof(external_buffer));
-    bool parse_result {};
-    while ((parse_result = m.parse())) {}
-    BOOST_REQUIRE_EQUAL(parse_result, false);
+
+    while (m.parse()) {}
+
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_rmc_state().get());
     BOOST_REQUIRE_EQUAL(m.size() , 3);
     BOOST_REQUIRE (m.get_start() == m.begin());
@@ -73,13 +73,12 @@ BOOST_AUTO_TEST_CASE( test_wrong_rmc_and_switch_$_state )
 {
     using namespace serial;
     test_machine m;
-    char external_buffer[12] = {'1','2','3','4','5','6','$','G','R','M','C','_'}; // no 'R' in the middle
+    char const external_buffer [12] = {'1','2','3','4','5','6','$','G','R','M','C','_'}; // no 'R' in the middle
 
     m.fill_data(external_buffer, sizeof(external_buffer));
-    bool parse_result {};
-    while ((parse_result = m.parse())) {}
 
-    BOOST_REQUIRE_EQUAL(parse_result, false);
+    while ( m.parse()) {}
+
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
     BOOST_REQUIRE_EQUAL(m.size() , 0);
     BOOST_REQUIRE (m.get_start() != m.begin());
@@ -89,31 +88,59 @@ BOOST_AUTO_TEST_CASE( test_rmc_and_switch_state )
 {
     using namespace serial;
     test_machine m;
-    char external_buffer[13] = {'1','2','3','4','5','6','$','G','P','R','M','C','_'};
+    char const external_buffer[13] = {'1','2','3','4','5','6','$','G','P','R','M','C','_'};
 
     m.fill_data(external_buffer, sizeof(external_buffer));
-    bool parse_result {};
-    while ((parse_result = m.parse())) {}
 
-    BOOST_REQUIRE_EQUAL(parse_result, false);
+    while (m.parse()) {}
+
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_crlf_state().get());
     BOOST_REQUIRE_EQUAL(m.size() , 1);
     BOOST_REQUIRE_EQUAL(*m.begin() , '_');
 }
 
-BOOST_AUTO_TEST_CASE( test_crlf_state )
+BOOST_AUTO_TEST_CASE( test_crlf_state_no_CR_LF_and_max_search_size )
+{
+    using namespace serial;
+    test_machine m;
+    char external_buffer[90] = {'$','G','P','R','M','C',};
+
+    m.fill_data(external_buffer, sizeof(external_buffer));
+
+    while (m.parse()) {}
+    //auto parse_result = m.parse();
+    //BOOST_REQUIRE (parse_result);
+
+    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
+    BOOST_REQUIRE_EQUAL(m.size() , 0);
+}
+
+BOOST_AUTO_TEST_CASE( test_crlf_state_CR_only )
 {
     using namespace serial;
     test_machine m;
     char external_buffer[14] = {'1','2','3','4','5','6','$','G','P','R','M','C','_','\x0D'};
 
     m.fill_data(external_buffer, sizeof(external_buffer));
-    bool parse_result {};
-    while ((parse_result = m.parse())) {}
 
-    BOOST_REQUIRE_EQUAL(parse_result, false);
-//    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_crlf_state().get());
-//    BOOST_REQUIRE_EQUAL(m.size() , 1);
-//    BOOST_REQUIRE_EQUAL(*m.begin() , '_');
+    while (m.parse()) {}
+
+    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_crlf_state().get());
+    BOOST_REQUIRE_EQUAL(m.size() , 1);
+    BOOST_REQUIRE_EQUAL(*m.begin() , '\x0D');
+}
+
+BOOST_AUTO_TEST_CASE( test_crlf_state_CR_LF )
+{
+    using namespace serial;
+    test_machine m;
+    char external_buffer[15] = {'1','2','3','4','5','6','$','G','P','R','M','C','_','\x0D','\x0A'};
+
+    m.fill_data(external_buffer, sizeof(external_buffer));
+
+    while (m.parse()) {}
+
+    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_checksum_state().get());
+    BOOST_REQUIRE_EQUAL(m.size() , 0);
 }
 

@@ -21,22 +21,29 @@ namespace serial
         using parent_class_type::fill_data;
     public:
         using parent_class_type::align;
+        using parent_class_type::strict_align;
         using parent_class_type::size;
         using parent_class_type::distance;
         using parent_class_type::begin;
         using parent_class_type::end;
+        using parent_class_type::head;
+        using parent_class_type::tail;
     private:
         using class_type = machine;
         using parse_$_state_type = Parse$State<class_type>;
         using parse_rmc_state_type = ParseRmcState<class_type>;
         using parse_crlf_state_type = ParseCrlfState<class_type>;
+        using parse_checksum_state_type = ParseChecksumState<class_type>;
 
         friend parse_$_state_type;
-        friend parse_rmc_state_type;
+        //friend parse_rmc_state_type;
         friend parse_crlf_state_type;
+        friend parse_checksum_state_type;
+
         const state_ptr parse_$_state_;
         const state_ptr parse_rmc_state_;
         const state_ptr parse_crlf_state_;
+        const state_ptr parse_checksum_state_;
     protected:
         state* current_state {nullptr};
 
@@ -45,6 +52,7 @@ namespace serial
                 , parse_$_state_(std::make_unique<parse_$_state_type>(*this))
                 , parse_rmc_state_(std::make_unique<parse_rmc_state_type>(*this))
                 , parse_crlf_state_(std::make_unique<parse_crlf_state_type>(*this))
+                , parse_checksum_state_(std::make_unique<parse_checksum_state_type>(*this))
         {
             current_state = parse_$_state_.get();
         }
@@ -69,6 +77,12 @@ namespace serial
             return parse_crlf_state_;
         }
 
+        [[nodiscard]] const state_ptr& get_parse_checksum_state() const noexcept
+        {
+            return parse_checksum_state_;
+        }
+
+
         void set_state (state_ptr const & state ) noexcept
         {
             assert(state);
@@ -79,10 +93,17 @@ namespace serial
 
     private:
         const_iterator start_iterator = begin();
+        const_iterator stop_iterator = begin();
         void save_start(const_iterator it)
         {
             start_iterator = it;
         }
+        void save_stop(const_iterator it)
+        {
+            stop_iterator = it;
+        }
+
+
     public:
         [[nodiscard]] const_iterator get_start() const noexcept
         {
