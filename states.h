@@ -101,16 +101,17 @@ namespace serial
     {
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
-        const uint8_t max_search_size = 82;
-        uint8_t search_size = 0;
-        bool on_max_search_size() noexcept
+        const uint8_t max_msg_size = 82;
+        uint8_t msg_size = 0;
+        bool on_max_msg_size() noexcept
         {
-            if (search_size > max_search_size) {
+            // code smell... fix me.
+            if (msg_size > max_msg_size) {
                 machine_.align();
                 machine_.set_state(machine_.get_parse_$_state());
-                return true;
+                return true; // code smell
             }
-            return false;
+            return false; // code smell
         }
     public:
         explicit ParseCrlfState (typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
@@ -122,38 +123,29 @@ namespace serial
 
             if (__ == machine_.end())
             {
-                auto inc_iter = std::begin(machine_);
-                while (machine_.size() > 1)
+                if (machine_.size() > 1)
                 {
-                    machine_.strict_align(++inc_iter);
-                    ++search_size;
+                    auto const sz = machine_.size();
+                    machine_.strict_align(std::begin(machine_)+(sz-1));
+                    msg_size += (sz - 1);
                 }
-                return on_max_search_size();
+                return on_max_msg_size();
             } else
             {
                 machine_.save_stop(__);
                 machine_.align(++__);
                 machine_.set_state(machine_.get_parse_checksum_state());
-                std::cout << *machine_.get_start() << std::endl;
-//                __try
-//                {
-//                    //machine_.strict_align(machine_.get_start());
-//                    std::cout << "dist " << machine_.distance(machine_.get_start(), __) << std::endl;
-//                }
-//                catch(funny_it::out_of_bounds & ex)
-//                {
-//                    std::cout << "funny_it::out_of_bounds\n";
-//                }
                 return true;
             }
         }
 
         void cleanup() noexcept final
         {
-            search_size = 0;
+            msg_size = 0;
         }
     };
 
+    // caretaker (memento pattern)
     template <typename MACHINE>
     class ParseChecksumState final : public parent_state<MACHINE>
     {
@@ -164,9 +156,24 @@ namespace serial
 
         bool parse() noexcept override
         {
-            return false;
-        }
+            auto cp = machine_.check_point();
+            machine_.reset(machine_.get_start(), machine_.get_stop());
+            auto star_pos = machine_.begin() + (machine_.size() - 3);
 
+            if (*star_pos != '*')
+            {
+                machine_.rollback(std::move(cp));
+                machine_.set_state(machine_.get_parse_$_state());
+                return true;
+            }
+
+            for (auto const & elem : machine_)
+            {
+                std::cout << elem << std::endl;
+                break;
+            }
+            return true;
+        }
     };
 
 }

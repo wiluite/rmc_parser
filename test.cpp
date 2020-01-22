@@ -77,11 +77,14 @@ BOOST_AUTO_TEST_CASE( test_wrong_rmc_and_switch_$_state )
 
     m.fill_data(external_buffer, sizeof(external_buffer));
 
-    while ( m.parse()) {}
+    auto pres {false};
+    while ( (pres = m.parse())) {}
 
+    BOOST_REQUIRE(!pres);
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
     BOOST_REQUIRE_EQUAL(m.size() , 0);
     BOOST_REQUIRE (m.get_start() != m.begin());
+
 }
 
 BOOST_AUTO_TEST_CASE( test_rmc_and_switch_state )
@@ -108,8 +111,6 @@ BOOST_AUTO_TEST_CASE( test_crlf_state_no_CR_LF_and_max_search_size )
     m.fill_data(external_buffer, sizeof(external_buffer));
 
     while (m.parse()) {}
-    //auto parse_result = m.parse();
-    //BOOST_REQUIRE (parse_result);
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
     BOOST_REQUIRE_EQUAL(m.size() , 0);
@@ -138,9 +139,45 @@ BOOST_AUTO_TEST_CASE( test_crlf_state_CR_LF )
 
     m.fill_data(external_buffer, sizeof(external_buffer));
 
-    while (m.parse()) {}
+    m.parse(); // $
+    m.parse(); // RMC
+    auto pres = m.parse(); // CRLF
+
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_checksum_state().get());
-    BOOST_REQUIRE_EQUAL(m.size() , 0);
+    BOOST_REQUIRE (pres);
 }
 
+BOOST_AUTO_TEST_CASE( test_checksum_state_1)
+{
+    using namespace serial;
+    test_machine m;
+    char external_buffer[15] = {'1','2','3','4','5','6','$','G','P','R','M','C','_','\x0D','\x0A'};
+
+    m.fill_data(external_buffer, sizeof(external_buffer));
+
+    m.parse(); // $
+    m.parse(); // RMC
+    m.parse(); // CRLF
+    auto pres = m.parse(); //CS -> $
+
+    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
+    BOOST_REQUIRE (pres);
+}
+
+BOOST_AUTO_TEST_CASE( test_checksum_state_2)
+{
+    using namespace serial;
+    test_machine m;
+    char external_buffer[17] = {'1','2','3','4','5','6','$','G','P','R','M','C','*','_','_','\x0D','\x0A'};
+
+    m.fill_data(external_buffer, sizeof(external_buffer));
+
+    m.parse(); // $
+    m.parse(); // RMC
+    m.parse(); // CRLF
+    auto pres = m.parse(); //CS -> $
+
+    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_checksum_state().get());
+    BOOST_REQUIRE (pres);
+}

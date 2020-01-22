@@ -11,7 +11,18 @@ namespace serial
 {
     using namespace funny_it;
 
+    template <class M>
+    class machine_memento
+    {
+        friend class machine;
+        typename M::const_iterator b;
+        typename M::const_iterator e;
+    public:
+        explicit machine_memento (M const & m) : b(m.begin()), e(m.end()) {}
+    };
+
     constexpr int buf_sz = 1000;
+    // Originator
     class machine : private ring_buffer_sequence<char, buf_sz>
     {
     private:
@@ -28,6 +39,7 @@ namespace serial
         using parent_class_type::end;
         using parent_class_type::head;
         using parent_class_type::tail;
+        using parent_class_type::const_iterator;
     private:
         using class_type = machine;
         using parse_$_state_type = Parse$State<class_type>;
@@ -36,7 +48,6 @@ namespace serial
         using parse_checksum_state_type = ParseChecksumState<class_type>;
 
         friend parse_$_state_type;
-        //friend parse_rmc_state_type;
         friend parse_crlf_state_type;
         friend parse_checksum_state_type;
 
@@ -82,7 +93,6 @@ namespace serial
             return parse_checksum_state_;
         }
 
-
         void set_state (state_ptr const & state ) noexcept
         {
             assert(state);
@@ -103,12 +113,26 @@ namespace serial
             stop_iterator = it;
         }
 
+        std::unique_ptr<machine_memento<class_type>> check_point()
+        {
+            return std::make_unique<machine_memento<class_type>>(*this);
+        }
+        void rollback (std::unique_ptr<machine_memento<class_type>> mem)
+        {
+            reset(mem->b, mem->e);
+        }
 
     public:
         [[nodiscard]] const_iterator get_start() const noexcept
         {
             return start_iterator;
         }
+
+        [[nodiscard]] const_iterator get_stop() const noexcept
+        {
+            return stop_iterator;
+        }
+
 
     };
     char machine::buffer[buf_sz] = {};
