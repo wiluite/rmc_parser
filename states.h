@@ -146,7 +146,6 @@ namespace serial
         }
     };
 
-    using namespace serial;
     // caretaker (memento pattern)
     template <typename MACHINE>
     class ParseChecksumState final : public parent_state<MACHINE>
