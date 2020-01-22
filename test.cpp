@@ -163,6 +163,7 @@ BOOST_AUTO_TEST_CASE( test_checksum_state_1)
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
     BOOST_REQUIRE (pres);
+    BOOST_REQUIRE_EQUAL (m.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE( test_checksum_state_2)
@@ -178,6 +179,7 @@ BOOST_AUTO_TEST_CASE( test_checksum_state_2)
     m.parse(); // CRLF
     auto pres = m.parse(); //CS -> $
 
-    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_checksum_state().get());
+    BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
     BOOST_REQUIRE (pres);
+    BOOST_REQUIRE_EQUAL (m.size(), 0);
 }

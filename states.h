@@ -7,6 +7,7 @@
 #include <memory>
 #include <iostream>
 #include <ring_iter.h>
+#include "mach_mem.h"
 
 namespace serial
 {
@@ -109,9 +110,9 @@ namespace serial
             if (msg_size > max_msg_size) {
                 machine_.align();
                 machine_.set_state(machine_.get_parse_$_state());
-                return true; // code smell
+                return true;
             }
-            return false; // code smell
+            return false;
         }
     public:
         explicit ParseCrlfState (typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
@@ -145,35 +146,48 @@ namespace serial
         }
     };
 
+    using namespace serial;
     // caretaker (memento pattern)
     template <typename MACHINE>
     class ParseChecksumState final : public parent_state<MACHINE>
     {
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
+        std::unique_ptr<machine_memento<MACHINE>> mm {nullptr};
+        char msg_checksum[3] {};
     public:
         explicit ParseChecksumState(typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
 
         bool parse() noexcept override
         {
-            auto cp = machine_.check_point();
+            mm = machine_.check_point();
+
             machine_.reset(machine_.get_start(), machine_.get_stop());
             auto star_pos = machine_.begin() + (machine_.size() - 3);
 
             if (*star_pos != '*')
             {
-                machine_.rollback(std::move(cp));
                 machine_.set_state(machine_.get_parse_$_state());
                 return true;
             }
 
+            std::copy (machine_.begin() + (machine_.size() - 2), machine_.begin() + (machine_.size() - 0), msg_checksum);
+            std::cout << msg_checksum[0] << std::endl;
+            std::cout << msg_checksum[1] << std::endl;
             for (auto const & elem : machine_)
             {
                 std::cout << elem << std::endl;
                 break;
             }
+            machine_.set_state(machine_.get_parse_$_state());
             return true;
         }
+
+        void cleanup() noexcept final
+        {
+            machine_.rollback(std::move(mm));
+        }
+
     };
 
 }

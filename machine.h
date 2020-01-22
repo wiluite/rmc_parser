@@ -6,23 +6,14 @@
 #define RMC_PARSER_MACHINE_H
 #include <ring_iter.h>
 #include "states.h"
+#include "mach_mem.h"
 
 namespace serial
 {
     using namespace funny_it;
 
-    template <class M>
-    class machine_memento
-    {
-        friend class machine;
-        typename M::const_iterator b;
-        typename M::const_iterator e;
-    public:
-        explicit machine_memento (M const & m) : b(m.begin()), e(m.end()) {}
-    };
-
     constexpr int buf_sz = 1000;
-    // Originator
+    // Originator (memento)
     class machine : private ring_buffer_sequence<char, buf_sz>
     {
     private:

@@ -14,12 +14,12 @@ include(external/external_cmake)
 
 
 
-set(SOURCE_FILES main.cpp machine.h states.h)
+set(SOURCE_FILES main.cpp machine.h states.h mach_mem.h)
 add_definitions(-Wno-deprecated )
-add_executable(sample ${SOURCE_FILES} )
+add_executable(sample ${SOURCE_FILES} mach_mem.h)
 
 add_definitions(-Wno-unused-result )
-add_executable(test_app test.cpp machine.h states.h)
+add_executable(test_app test.cpp machine.h states.h mach_mem.h)
 target_link_libraries (test_app ${Boost_LIBRARIES}  )
 add_test (test_app test_app)
 
