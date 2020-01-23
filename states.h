@@ -1,13 +1,10 @@
-//
-// Created by user on 13.01.2020.
-//
-
 #ifndef RMC_PARSER_STATES_H
 #define RMC_PARSER_STATES_H
 #include <memory>
 #include <iostream>
 #include <ring_iter.h>
 #include "mach_mem.h"
+#include "light_string.h"
 
 namespace serial
 {
@@ -17,10 +14,6 @@ namespace serial
         virtual ~state() = default;
         virtual bool parse() = 0;
         virtual void cleanup() {}
-        void print_this()
-        {
-            std::cout << (int*)this << std::endl;
-        }
     };
 
     using state_ptr = std::unique_ptr<state>;
@@ -153,31 +146,49 @@ namespace serial
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
         std::unique_ptr<machine_memento<MACHINE>> mm {nullptr};
-        char msg_checksum[3] {};
+        char msg_checksum[3] {0,0,'\0'};
+
+        [[nodiscard]] int calc_cs() const noexcept
+        {
+            int sum = 0;
+            for (auto const & elem : machine_)
+            {
+                if ('*' == elem)
+                    break;
+                if (!sum)
+                {
+                    sum = elem;
+                } else
+                {
+                    sum ^= elem;
+                }
+            }
+            return sum;
+        }
+
     public:
         explicit ParseChecksumState(typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
 
-        bool parse() noexcept override
+        bool parse() noexcept final
         {
             mm = machine_.check_point();
 
             machine_.reset(machine_.get_start(), machine_.get_stop());
-            auto star_pos = machine_.begin() + (machine_.size() - 3);
+            auto const star_it = machine_.begin() + (machine_.size() - 3);
 
-            if (*star_pos != '*')
+            if (*star_it != '*')
             {
                 machine_.set_state(machine_.get_parse_$_state());
                 return true;
             }
 
-            std::copy (machine_.begin() + (machine_.size() - 2), machine_.begin() + (machine_.size() - 0), msg_checksum);
-            std::cout << msg_checksum[0] << std::endl;
-            std::cout << msg_checksum[1] << std::endl;
-            for (auto const & elem : machine_)
+            std::uninitialized_copy (machine_.begin() + (machine_.size() - 2), machine_.begin() + (machine_.size() - 0), msg_checksum);
+
+            if (calc_cs() == strtol(msg_checksum, nullptr, 16))
             {
-                std::cout << elem << std::endl;
-                break;
+                machine_.process(string_type(machine_.begin(), machine_.end()));
             }
+
             machine_.set_state(machine_.get_parse_$_state());
             return true;
         }

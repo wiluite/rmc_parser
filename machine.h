@@ -1,24 +1,28 @@
-//
-// Created by user on 13.01.2020.
-//
-
 #ifndef RMC_PARSER_MACHINE_H
 #define RMC_PARSER_MACHINE_H
 #include <ring_iter.h>
 #include "states.h"
 #include "mach_mem.h"
+#include "light_string.h"
 
 namespace serial
 {
+    struct rmc_parser
+    {
+        static int decompose(string_type const & str)
+        {
+            return 0;
+        }
+    };
+
     using namespace funny_it;
 
-    constexpr int buf_sz = 1000;
-    // Originator (memento)
-    class machine : private ring_buffer_sequence<char, buf_sz>
+    template <size_t bs = 200, class RMC_Parser = rmc_parser>
+    class machine : private ring_buffer_sequence<char, bs>
     {
     private:
-        static char buffer [buf_sz];
-        using parent_class_type = ring_buffer_sequence<char, buf_sz>;
+        static char buffer [bs];
+        using parent_class_type = ring_buffer_sequence<char, bs>;
     protected:
         using parent_class_type::fill_data;
     public:
@@ -30,7 +34,7 @@ namespace serial
         using parent_class_type::end;
         using parent_class_type::head;
         using parent_class_type::tail;
-        using parent_class_type::const_iterator;
+        using const_iterator = typename parent_class_type::const_iterator;
     private:
         using class_type = machine;
         using parse_$_state_type = Parse$State<class_type>;
@@ -50,7 +54,7 @@ namespace serial
         state* current_state {nullptr};
 
     public:
-        machine() : ring_buffer_sequence<char,buf_sz>(buffer)
+        machine() : ring_buffer_sequence<char, bs>(buffer)
                 , parse_$_state_(std::make_unique<parse_$_state_type>(*this))
                 , parse_rmc_state_(std::make_unique<parse_rmc_state_type>(*this))
                 , parse_crlf_state_(std::make_unique<parse_crlf_state_type>(*this))
@@ -59,32 +63,32 @@ namespace serial
             current_state = parse_$_state_.get();
         }
 
-        [[nodiscard]] bool parse() const noexcept
+        [[nodiscard]] constexpr bool parse() const noexcept
         {
             return current_state->parse();
         }
 
-        [[nodiscard]] const state_ptr& get_parse_$_state() const noexcept
+        [[nodiscard]] constexpr const state_ptr& get_parse_$_state() const noexcept
         {
             return parse_$_state_;
         }
 
-        [[nodiscard]] const state_ptr& get_parse_rmc_state() const noexcept
+        [[nodiscard]] constexpr const state_ptr& get_parse_rmc_state() const noexcept
         {
             return parse_rmc_state_;
         }
 
-        [[nodiscard]] const state_ptr& get_parse_crlf_state() const noexcept
+        [[nodiscard]] constexpr const state_ptr& get_parse_crlf_state() const noexcept
         {
             return parse_crlf_state_;
         }
 
-        [[nodiscard]] const state_ptr& get_parse_checksum_state() const noexcept
+        [[nodiscard]] constexpr const state_ptr& get_parse_checksum_state() const noexcept
         {
             return parse_checksum_state_;
         }
 
-        void set_state (state_ptr const & state ) noexcept
+        constexpr void set_state (state_ptr const & state ) noexcept
         {
             assert(state);
             assert(current_state);
@@ -95,37 +99,46 @@ namespace serial
     private:
         const_iterator start_iterator = begin();
         const_iterator stop_iterator = begin();
-        void save_start(const_iterator it)
+        constexpr void save_start(const_iterator it) noexcept
         {
             start_iterator = it;
         }
-        void save_stop(const_iterator it)
+
+        constexpr void save_stop(const_iterator it) noexcept
         {
             stop_iterator = it;
         }
 
-        std::unique_ptr<machine_memento<class_type>> check_point()
+        constexpr std::unique_ptr<machine_memento<class_type>> check_point() const noexcept
         {
             return std::make_unique<machine_memento<class_type>>(*this);
         }
-        void rollback (std::unique_ptr<machine_memento<class_type>> mem)
+
+        constexpr void rollback (std::unique_ptr<machine_memento<class_type>> mem) noexcept
         {
-            reset(mem->b, mem->e);
+            parent_class_type::reset(mem->b, mem->e);
         }
 
     public:
-        [[nodiscard]] const_iterator get_start() const noexcept
+        [[nodiscard]] constexpr const_iterator get_start() const noexcept
         {
             return start_iterator;
         }
 
-        [[nodiscard]] const_iterator get_stop() const noexcept
+        [[nodiscard]] constexpr const_iterator get_stop() const noexcept
         {
             return stop_iterator;
         }
 
+        virtual void process(string_type const & s)
+        {
+            std::cout << s << std::endl;
+            auto _  = RMC_Parser::decompose(s);
+        }
+
 
     };
-    char machine::buffer[buf_sz] = {};
+    template <size_t bs, class RMC_Parser>
+    char machine<bs, RMC_Parser>::buffer[bs] = {};
 }
 #endif //RMC_PARSER_MACHINE_H
