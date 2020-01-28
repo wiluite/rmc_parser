@@ -49,7 +49,7 @@ namespace serial
                 return false;
             } else
             {
-                machine_.align(__);
+                machine_.align(__+1);
                 machine_.set_state(machine_.get_parse_rmc_state()); // cleanup call here
                 return true;
             }
@@ -73,15 +73,15 @@ namespace serial
         {
             if (machine_.size() >= 5)
             {
-                std::array<char, 3> const rmc_seq {'R', 'M', 'C'};
-                auto __ = std::search (machine_.begin(), machine_.end(), rmc_seq.begin(), rmc_seq.end());
+                std::array<char, 3> constexpr rmc_seq {'R', 'M', 'C'};
+                auto const __ = std::search (machine_.begin(), machine_.end(), rmc_seq.begin(), rmc_seq.end());
                 if ((__ == machine_.end()) || (machine_.distance(machine_.get_start(), __) != 2))
                 {
                     machine_.align();
                     machine_.set_state(machine_.get_parse_$_state());
                 } else
                 {
-                    machine_.align(++++__);
+                    machine_.align(__ + sizeof(rmc_seq));
                     machine_.set_state(machine_.get_parse_crlf_state());
                 }
                 return true;
@@ -112,22 +112,23 @@ namespace serial
 
         bool parse() noexcept override
         {
-            std::array<char, 2> const crlf_seq {'\x0D', '\x0A'};
-            auto __ = std::search (machine_.begin(), machine_.end(), crlf_seq.begin(), crlf_seq.end());
+            std::array<char, 2> constexpr crlf_seq {'\x0D', '\x0A'};
+            auto const __ = std::search (machine_.begin(), machine_.end(), crlf_seq.begin(), crlf_seq.end());
 
             if (__ == machine_.end())
             {
                 if (machine_.size() > 1)
                 {
                     auto const sz = machine_.size();
-                    machine_.strict_align(std::begin(machine_)+(sz-1));
+                    machine_.align(std::begin(machine_)+(sz-1));
                     msg_size += (sz - 1);
                 }
                 return on_max_msg_size();
             } else
             {
                 machine_.save_stop(__);
-                machine_.align(++__);
+                machine_.align(__ + sizeof(crlf_seq));
+
                 machine_.set_state(machine_.get_parse_checksum_state());
                 return true;
             }
@@ -176,7 +177,7 @@ namespace serial
             machine_.reset(machine_.get_start(), machine_.get_stop());
             auto const star_it = machine_.begin() + (machine_.size() - 3);
 
-            if (*star_it != '*')
+            if ('*' != *star_it)
             {
                 machine_.set_state(machine_.get_parse_$_state());
                 return true;

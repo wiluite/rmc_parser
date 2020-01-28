@@ -27,7 +27,6 @@ namespace serial
         using parent_class_type::fill_data;
     public:
         using parent_class_type::align;
-        using parent_class_type::strict_align;
         using parent_class_type::size;
         using parent_class_type::distance;
         using parent_class_type::begin;
