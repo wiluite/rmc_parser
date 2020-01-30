@@ -151,19 +151,13 @@ namespace serial
 
         [[nodiscard]] int calc_cs() const noexcept
         {
-            int sum = 0;
-            for (auto const & elem : machine_)
-            {
-                if ('*' == elem)
-                    break;
-                if (!sum)
-                {
-                    sum = elem;
-                } else
-                {
-                    sum ^= elem;
-                }
-            }
+            // not a range-based loop in order to not checking for '*' on each cycle
+            int8_t sum = *machine_.begin();
+            std::for_each(machine_.begin()+1, machine_.begin()+(machine_.size()-3), [&sum](char elem)
+                          {
+                              sum ^= elem;
+                          }
+            );
             return sum;
         }
 
