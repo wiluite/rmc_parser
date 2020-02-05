@@ -188,34 +188,7 @@ namespace serial
 
                     *buf = '\0';
                 } break;
-
-                case 't': { // NMEA talker+sentence identifier (char *).
-                    // This field is always mandatory.
-                    if (!field)
-                    {
-                        std::cout << "parse_error 1" << std::endl;
-                        goto parse_error;
-                    }
-
-//                    if (field[0] != '$')
-//                    {
-//                        std::cout << "parse_error 2" << std::endl;
-//                        goto parse_error;
-//                    }
-
-//                    for (int f=0; f<5; f++)
-//                        if (!minmea_isfield(field[1+f]))
-//                            goto parse_error;
-                    for (int f=0; f<5; f++)
-                        if (!minmea_isfield(field[f]))
-                            goto parse_error;
-
-                    char *buf = va_arg(ap, char *);
-//                    memcpy(buf, field+1, 5);
-                    memcpy(buf, field, 5);
-                    buf[5] = '\0';
-                } break;
-
+                
                 case 'D': { // Date (int, int, int), -1 if empty.
                     struct minmea_date *date = va_arg(ap, struct minmea_date *);
 
