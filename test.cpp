@@ -9,7 +9,7 @@ struct test_machine : public serial::machine<> {
     int proc_call = 0;
     void process() override
     {
-        ::serial::machine<>::process();
+        serial::machine<>::process();
         ++proc_call;
     }
 
@@ -17,12 +17,13 @@ struct test_machine : public serial::machine<> {
 
 template <size_t bs>
 struct rotated_parse_test_machine : public serial::machine<bs> {
-    using serial::machine<bs>::fill_data;
-    using serial::machine<bs>::current_state;
+    using parent_class_type = serial::machine<bs>;
+    using parent_class_type::fill_data;
+    using parent_class_type::current_state;
     int proc_call = 0;
     void process() override
     {
-        ::serial::machine<bs>::process();
+        parent_class_type::process();
         ++proc_call;
     }
 };
@@ -203,7 +204,7 @@ BOOST_AUTO_TEST_CASE( test_checksum_state_2)
     BOOST_REQUIRE_EQUAL (m.size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE( test_checksum_state_3)
+BOOST_AUTO_TEST_CASE( test_successful_checksum)
 {
     using namespace serial;
     test_machine m;
@@ -221,15 +222,16 @@ BOOST_AUTO_TEST_CASE( test_checksum_state_3)
     BOOST_REQUIRE (pres);
 }
 
-BOOST_AUTO_TEST_CASE( test_checksum_state_4)
+BOOST_AUTO_TEST_CASE( test_2_messages)
 {
     using namespace serial;
     test_machine m;
-    char external_buffer[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191119,020.3,E*6D\x0D\x0A"};
-    m.fill_data(external_buffer, sizeof(external_buffer));
-
     auto const save_proc_call = m.proc_call;
 
+    char external_buffer[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191119,020.3,E*6D\x0D\x0A"};
+    m.fill_data(external_buffer, sizeof(external_buffer)/3);
+    while(m.parse()) {}
+    m.fill_data(external_buffer + sizeof(external_buffer)/3, (sizeof(external_buffer) - sizeof(external_buffer)/3));
     while(m.parse()) {}
 
     BOOST_REQUIRE_EQUAL(m.proc_call, save_proc_call + 2);
@@ -237,7 +239,7 @@ BOOST_AUTO_TEST_CASE( test_checksum_state_4)
 }
 
 template <int T>
-constexpr void proc (std::integral_constant<int, T>  sz)
+constexpr void rotated_parse (std::integral_constant<int, T>  sz)
 {
     rotated_parse_test_machine<sz> m;
     char external_buffer1[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
@@ -256,16 +258,16 @@ constexpr void proc (std::integral_constant<int, T>  sz)
 }
 
 
-BOOST_AUTO_TEST_CASE( test_checksum_state_5)
+BOOST_AUTO_TEST_CASE( test_rotated_parse)
 {
     using namespace serial;
 
-    proc(std::integral_constant<int, 70>());
-    proc(std::integral_constant<int, 75>());
-    proc(std::integral_constant<int, 80>());
-    proc(std::integral_constant<int, 85>());
-    proc(std::integral_constant<int, 90>());
-    proc(std::integral_constant<int, 95>());
-    proc(std::integral_constant<int, 100>());
+    rotated_parse(std::integral_constant<int, 70>());
+    rotated_parse(std::integral_constant<int, 74>());
+    rotated_parse(std::integral_constant<int, 81>());
+    rotated_parse(std::integral_constant<int, 85>());
+    rotated_parse(std::integral_constant<int, 92>());
+    rotated_parse(std::integral_constant<int, 96>());
+    rotated_parse(std::integral_constant<int, 100>());
 }
 

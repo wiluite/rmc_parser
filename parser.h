@@ -164,7 +164,7 @@ namespace serial
 
                     *va_arg(ap, struct minmea_float *) = (struct minmea_float) {value, scale};
                 } break;
-                
+
                 case 'D': { // Date (int, int, int), -1 if empty.
                     struct minmea_date *date = va_arg(ap, struct minmea_date *);
 
