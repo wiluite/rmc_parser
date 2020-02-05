@@ -4,7 +4,6 @@
 #include <iostream>
 #include <ring_iter.h>
 #include "mach_mem.h"
-#include "light_string.h"
 
 namespace serial
 {
@@ -95,11 +94,12 @@ namespace serial
     {
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
-        const uint8_t max_msg_size = 82;
+
         uint8_t msg_size = 0;
         bool on_max_msg_size() noexcept
         {
-            // code smell... fix me.
+            static constexpr uint8_t max_msg_size = 82;
+
             if (msg_size > max_msg_size) {
                 machine_.align();
                 machine_.set_state(machine_.get_parse_$_state());
@@ -181,7 +181,7 @@ namespace serial
 
             if (calc_cs() == strtol(msg_checksum, nullptr, 16))
             {
-                machine_.process(string_type(machine_.begin(), machine_.end()));
+                machine_.process();
             }
 
             machine_.set_state(machine_.get_parse_$_state());

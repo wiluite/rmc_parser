@@ -2,17 +2,12 @@
 #define RMC_PARSER_MACHINE_H
 #include <ring_iter.h>
 #include "states.h"
-#include "mach_mem.h"
-#include "light_string.h"
+#include "parser.h"
 
 namespace serial
 {
     struct rmc_parser
     {
-        static int decompose(string_type const & str)
-        {
-            return 0;
-        }
     };
 
     using namespace funny_it;
@@ -129,10 +124,25 @@ namespace serial
             return stop_iterator;
         }
 
-        virtual void process(string_type const & s)
+
+#define INDENT_SPACES "  "
+        virtual void process()
         {
-            std::cout << s << std::endl;
-            auto _  = RMC_Parser::decompose(s);
+            char line[80] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            std::uninitialized_copy (begin()+6, end(), line);
+            std::cout << line << std::endl;
+            minmea_sentence_rmc frame {};
+            if (minmea_parse_rmc(&frame, line))
+            {
+                printf(INDENT_SPACES "$xxRMC: raw coordinates and speed: (%d/%d,%d/%d) %d/%d\n",
+                        frame.latitude.value, frame.latitude.scale,
+                        frame.longitude.value, frame.longitude.scale,
+                        frame.speed.value, frame.speed.scale);
+            } else
+            {
+                //wrong parse
+            }
         }
 
 

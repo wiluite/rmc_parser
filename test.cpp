@@ -7,11 +7,12 @@ struct test_machine : public serial::machine<> {
     using machine::fill_data;
     using machine::current_state;
     int proc_call = 0;
-    void process(serial::string_type const & s) override
+    void process() override
     {
-        ::serial::machine<>::process(s);
+        ::serial::machine<>::process();
         ++proc_call;
     }
+
 };
 
 template <size_t bs>
@@ -19,9 +20,9 @@ struct rotated_parse_test_machine : public serial::machine<bs> {
     using serial::machine<bs>::fill_data;
     using serial::machine<bs>::current_state;
     int proc_call = 0;
-    void process(serial::string_type const & s) override
+    void process() override
     {
-        ::serial::machine<bs>::process(s);
+        ::serial::machine<bs>::process();
         ++proc_call;
     }
 };
