@@ -164,30 +164,6 @@ namespace serial
 
                     *va_arg(ap, struct minmea_float *) = (struct minmea_float) {value, scale};
                 } break;
-
-                case 'i': { // Integer value, default 0 (int).
-                    int value = 0;
-
-                    if (field) {
-                        char *endptr;
-                        value = strtol(field, &endptr, 10);
-                        if (minmea_isfield(*endptr))
-                            goto parse_error;
-                    }
-
-                    *va_arg(ap, int *) = value;
-                } break;
-
-                case 's': { // String value (char *).
-                    char *buf = va_arg(ap, char *);
-
-                    if (field) {
-                        while (minmea_isfield(*field))
-                            *buf++ = *field++;
-                    }
-
-                    *buf = '\0';
-                } break;
                 
                 case 'D': { // Date (int, int, int), -1 if empty.
                     struct minmea_date *date = va_arg(ap, struct minmea_date *);
