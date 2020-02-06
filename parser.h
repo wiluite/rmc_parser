@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdarg>
 #include <cmath>
-#include "external/funny_iters/ring_iter.h"
 
 // This code is borrowed from minmea parser by Kosma Moczek and has been slightly modified.
 // It is armed with ring buffer iterator used throughout the parser environment.
