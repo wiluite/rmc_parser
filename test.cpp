@@ -243,7 +243,8 @@ constexpr void rotated_parse (std::integral_constant<int, T>  sz)
 {
     rotated_parse_test_machine<sz> m;
     char external_buffer1[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
-    char external_buffer2[] = {"$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191119,020.3,E*6D\x0D\x0A"};
+    //char external_buffer2[] = {"$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191119,020.3,E*6D\x0D\x0A"};
+    char external_buffer2[] = {"$GPRMC,,V,,,,,,,080907,9.6,E,N*31\x0D\x0A"};
 
     auto const save_proc_call = m.proc_call;
 

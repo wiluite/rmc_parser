@@ -124,28 +124,18 @@ namespace serial
             return stop_iterator;
         }
 
-
-#define INDENT_SPACES "  "
         virtual void process()
         {
-            char line[80] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-            std::uninitialized_copy (begin()+6, end(), line);
-            std::cout << line << std::endl;
+            #define INDENT_SPACES "  "
             minmea_sentence_rmc frame {};
-            if (minmea_parse_rmc(&frame, line))
+            if (minmea_parse_rmc(&frame, begin()+6, end()))
             {
                 printf(INDENT_SPACES "$xxRMC: raw coordinates and speed: (%d/%d,%d/%d) %d/%d\n",
                         frame.latitude.value, frame.latitude.scale,
                         frame.longitude.value, frame.longitude.scale,
                         frame.speed.value, frame.speed.scale);
-            } else
-            {
-                //wrong parse
             }
         }
-
-
     };
     template <size_t bs, class RMC_Parser>
     char machine<bs, RMC_Parser>::buffer[bs] = {};

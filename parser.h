@@ -1,8 +1,10 @@
 #pragma once
 #include <cstdarg>
 #include <cmath>
+#include "external/funny_iters/ring_iter.h"
 
-// This code is borrowed from minmea parser by Kosma Moczek and has been slightly modified
+// This code is borrowed from minmea parser by Kosma Moczek and has been slightly modified.
+// It is armed with ring buffer iterator used throughout the parser environment.
 
 namespace serial
 {
@@ -39,25 +41,27 @@ namespace serial
         return isprint((unsigned char) c) && c != ',' && c != '*';
     }
 
-    bool minmea_scan(const char *sentence, const char *format, ...)
+    template <typename RING_IT>
+    bool minmea_scan(RING_IT it, RING_IT it2, const char *format, ...)
     {
         bool result = false;
         bool optional = false;
         va_list ap;
         va_start(ap, format);
 
-        auto field = sentence;
+        auto field = it;
 #define next_field() \
     do { \
         /* Progress to the next field. */ \
-        while (minmea_isfield(*sentence)) \
-            sentence++; \
+        while (minmea_isfield(*it)) \
+            ++it; \
         /* Make sure there is a field there. */ \
-        if (*sentence == ',') { \
-            sentence++; \
-            field = sentence; \
+        if (*it == ',') { \
+            ++it; \
+            field = it; \
         } else { \
-            field = NULL; \
+            field = it2; \
+            assert (!field); \
         } \
     } while (0)
 
@@ -70,7 +74,8 @@ namespace serial
                 continue;
             }
 
-            if (!field && !optional) {
+            if (!field && !optional)
+            {
                 // Field requested but we ran out if input. Bail out.
                 goto parse_error;
             }
@@ -144,7 +149,7 @@ namespace serial
                             } else {
                                 goto parse_error;
                             }
-                            field++;
+                            ++field;
                         }
                     }
 
@@ -228,9 +233,6 @@ namespace serial
                     time_->microseconds = u;
                 } break;
 
-                case '_': { // Ignore the field.
-                } break;
-
                 default: { // Unknown.
                     goto parse_error;
                 }
@@ -246,13 +248,14 @@ namespace serial
         return result;
     }
 
-    bool minmea_parse_rmc(struct minmea_sentence_rmc *frame, const char *sentence)
+    template <typename RING_IT>
+    bool minmea_parse_rmc(struct minmea_sentence_rmc *frame, RING_IT it, RING_IT end)
     {
         char validity;
         int latitude_direction;
         int longitude_direction;
         int variation_direction;
-        if (!minmea_scan(sentence, "TcfdfdffDfd",
+        if (!minmea_scan(it, end, "TcfdfdffDfd",
                          &frame->time,
                          &validity,
                          &frame->latitude, &latitude_direction,

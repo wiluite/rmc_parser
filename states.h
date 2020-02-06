@@ -192,9 +192,7 @@ namespace serial
         {
             machine_.rollback(std::move(mm));
         }
-
     };
-
 }
 
 #endif //RMC_PARSER_STATES_H
