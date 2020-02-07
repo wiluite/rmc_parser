@@ -1,18 +1,14 @@
-#ifndef RMC_PARSER_MACHINE_H
-#define RMC_PARSER_MACHINE_H
+#pragma once
+
 #include <ring_iter.h>
-#include "states.h"
-#include "parser.h"
+#include <states.h>
+#include <parser.h>
 
 namespace serial
 {
-    struct rmc_parser
-    {
-    };
-
     using namespace funny_it;
 
-    template <size_t bs = 200, class RMC_Parser = rmc_parser>
+    template <size_t bs, class RMC_Callback>
     class machine : private ring_buffer_sequence<char, bs>
     {
     private:
@@ -126,18 +122,14 @@ namespace serial
 
         virtual void process()
         {
-            #define INDENT_SPACES "  "
             minmea_sentence_rmc frame {};
             if (minmea_parse_rmc(&frame, begin()+6, end()))
             {
-                printf(INDENT_SPACES "$xxRMC: raw coordinates and speed: (%d/%d,%d/%d) %d/%d\n",
-                        frame.latitude.value, frame.latitude.scale,
-                        frame.longitude.value, frame.longitude.scale,
-                        frame.speed.value, frame.speed.scale);
+                RMC_Callback::callback(frame);
             }
         }
     };
-    template <size_t bs, class RMC_Parser>
-    char machine<bs, RMC_Parser>::buffer[bs] = {};
+    template <size_t bs, class RMC_Callback>
+    char machine<bs, RMC_Callback>::buffer[bs] = {};
 }
-#endif //RMC_PARSER_MACHINE_H
+

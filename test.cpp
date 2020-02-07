@@ -1,23 +1,45 @@
 #define BOOST_TEST_MODULE boost_test_module_
 #include <boost/test/unit_test.hpp> // UTF ??
-#include "machine.h"
+#include <machine.h>
 #include <iostream>
 
-struct test_machine : public serial::machine<> {
+struct rmc_callback1
+{
+    static void callback(serial::minmea_sentence_rmc rmc)
+    {
+        BOOST_REQUIRE ((rmc.latitude.value == -375165) || (rmc.latitude.value == 491645));
+        BOOST_REQUIRE (rmc.latitude.scale == 100);
+        BOOST_REQUIRE ((rmc.longitude.value == 1450736) || (rmc.longitude.value == -1231112));
+        BOOST_REQUIRE (rmc.longitude.scale == 100);
+        BOOST_REQUIRE ((rmc.speed.value == 0) || (rmc.speed.value == 5));
+        BOOST_REQUIRE (rmc.speed.scale == 10);
+        std::cout << "THIS CALLBACK\n";
+    }
+};
+
+struct test_machine : public serial::machine<200, rmc_callback1> {
+    using parent_class_type = serial::machine<200, rmc_callback1>;
     using machine::fill_data;
     using machine::current_state;
     int proc_call = 0;
     void process() override
     {
-        serial::machine<>::process();
+        parent_class_type::process();
         ++proc_call;
     }
-
 };
 
-template <size_t bs>
-struct rotated_parse_test_machine : public serial::machine<bs> {
-    using parent_class_type = serial::machine<bs>;
+struct rmc_callback2
+{
+    static void callback(serial::minmea_sentence_rmc rmc)
+    {
+        std::cout << "THAT CALLBACK\n";
+    }
+};
+
+template <size_t bs, class callback=rmc_callback2>
+struct rotated_parse_test_machine : public serial::machine<bs, callback> {
+    using parent_class_type = serial::machine<bs, callback>;
     using parent_class_type::fill_data;
     using parent_class_type::current_state;
     int proc_call = 0;
@@ -243,7 +265,6 @@ constexpr void rotated_parse (std::integral_constant<int, T>  sz)
 {
     rotated_parse_test_machine<sz> m;
     char external_buffer1[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
-    //char external_buffer2[] = {"$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191119,020.3,E*6D\x0D\x0A"};
     char external_buffer2[] = {"$GPRMC,,V,,,,,,,080907,9.6,E,N*31\x0D\x0A"};
 
     auto const save_proc_call = m.proc_call;

@@ -1,9 +1,9 @@
-#ifndef RMC_PARSER_STATES_H
-#define RMC_PARSER_STATES_H
+#pragma once
+
 #include <memory>
 #include <iostream>
 #include <ring_iter.h>
-#include "mach_mem.h"
+#include <mach_mem.h>
 
 namespace serial
 {
@@ -195,4 +195,3 @@ namespace serial
     };
 }
 
-#endif //RMC_PARSER_STATES_H
