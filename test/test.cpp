@@ -2,51 +2,61 @@
 #include <boost/test/unit_test.hpp> // UTF ??
 #include <machine.h>
 #include <iostream>
+#include <parser.h>
 
-struct rmc_callback1
+struct rmc_callback1 // callback for test_machine class
 {
     static void callback(serial::minmea_sentence_rmc rmc)
     {
-        BOOST_REQUIRE ((rmc.latitude.value == -375165) || (rmc.latitude.value == 491645));
-        BOOST_REQUIRE (rmc.latitude.scale == 100);
-        BOOST_REQUIRE ((rmc.longitude.value == 1450736) || (rmc.longitude.value == -1231112));
-        BOOST_REQUIRE (rmc.longitude.scale == 100);
-        BOOST_REQUIRE ((rmc.speed.value == 0) || (rmc.speed.value == 5));
-        BOOST_REQUIRE (rmc.speed.scale == 10);
-        std::cout << "THIS CALLBACK\n";
+        BOOST_CHECK ((rmc.latitude.value == -375165) || (rmc.latitude.value == 491645));
+        BOOST_CHECK (rmc.latitude.scale == 100);
+        BOOST_CHECK ((rmc.longitude.value == 1450736) || (rmc.longitude.value == -1231112));
+        BOOST_CHECK (rmc.longitude.scale == 100);
+        BOOST_CHECK ((rmc.speed.value == 0) || (rmc.speed.value == 5));
+        BOOST_CHECK (rmc.speed.scale == 10);
+        BOOST_CHECK ((rmc.time.hours == 8) || (rmc.time.hours == 22));
+        BOOST_CHECK (rmc.time.microseconds == 0);
+        BOOST_CHECK_EQUAL (rmc.date.year, 19);
+        BOOST_CHECK ((rmc.date.month == 9) || (rmc.date.month == 11));
+        BOOST_CHECK ((rmc.date.day == 19) || (rmc.date.day == 13));
     }
 };
-
 struct test_machine : public serial::machine<200, rmc_callback1> {
     using parent_class_type = serial::machine<200, rmc_callback1>;
     using machine::fill_data;
     using machine::current_state;
     int proc_call = 0;
-    void process() override
+    void process() override // with parent's method called
     {
-        parent_class_type::process();
         ++proc_call;
+        parent_class_type::process();
     }
 };
 
-struct rmc_callback2
+
+struct rmc_callback2 // callback for rotated_parse_test_machine class
 {
     static void callback(serial::minmea_sentence_rmc rmc)
     {
-        std::cout << "THAT CALLBACK\n";
+        // add checks yourself and ensure all values are right.
     }
 };
-
 template <size_t bs, class callback=rmc_callback2>
 struct rotated_parse_test_machine : public serial::machine<bs, callback> {
     using parent_class_type = serial::machine<bs, callback>;
     using parent_class_type::fill_data;
     using parent_class_type::current_state;
+    using parent_class_type::begin;
+    using parent_class_type::end;
     int proc_call = 0;
-    void process() override
+    void process() override // standalone processing
     {
-        parent_class_type::process();
         ++proc_call;
+        serial::minmea_sentence_rmc frame {};
+        if (minmea_parse_rmc(&frame, begin()+6, end()))
+        {
+            callback::callback(frame);
+        }
     }
 };
 
@@ -230,7 +240,7 @@ BOOST_AUTO_TEST_CASE( test_successful_checksum)
 {
     using namespace serial;
     test_machine m;
-    char external_buffer[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
+    char external_buffer[] = {"$GPRMC,081836.000,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*75\x0D\x0A"};
     m.fill_data(external_buffer, sizeof(external_buffer));
 
     auto const save_proc_call = m.proc_call;
@@ -250,7 +260,7 @@ BOOST_AUTO_TEST_CASE( test_2_messages)
     test_machine m;
     auto const save_proc_call = m.proc_call;
 
-    char external_buffer[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191119,020.3,E*6D\x0D\x0A"};
+    char external_buffer[] = {"$GPRMC,081836.000,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*75\x0D\x0A$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191119,020.3,E*6D\x0D\x0A"};
     m.fill_data(external_buffer, sizeof(external_buffer)/3);
     while(m.parse()) {}
     m.fill_data(external_buffer + sizeof(external_buffer)/3, (sizeof(external_buffer) - sizeof(external_buffer)/3));
@@ -264,7 +274,7 @@ template <int T>
 constexpr void rotated_parse (std::integral_constant<int, T>  sz)
 {
     rotated_parse_test_machine<sz> m;
-    char external_buffer1[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
+    char external_buffer1[] = {"$GPRMC,081836.000,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*75\x0D\x0A"};
     char external_buffer2[] = {"$GPRMC,,V,,,,,,,080907,9.6,E,N*31\x0D\x0A"};
 
     auto const save_proc_call = m.proc_call;
@@ -284,7 +294,6 @@ BOOST_AUTO_TEST_CASE( test_rotated_parse)
 {
     using namespace serial;
 
-    rotated_parse(std::integral_constant<int, 70>());
     rotated_parse(std::integral_constant<int, 74>());
     rotated_parse(std::integral_constant<int, 81>());
     rotated_parse(std::integral_constant<int, 85>());
