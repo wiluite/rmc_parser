@@ -10,7 +10,7 @@ if (UNIX)
     add_definitions( -DBOOST_TEST_DYN_LINK )
 endif()
 
-include(external/external_cmake)
+include(external/external)
 
 
 
