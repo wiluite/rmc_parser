@@ -22,8 +22,6 @@ namespace serial
         using parent_class_type::distance;
         using parent_class_type::begin;
         using parent_class_type::end;
-        using parent_class_type::head;
-        using parent_class_type::tail;
         using const_iterator = typename parent_class_type::const_iterator;
     private:
         using class_type = machine;
@@ -36,10 +34,11 @@ namespace serial
         friend parse_crlf_state_type;
         friend parse_checksum_state_type;
 
-        const state_ptr parse_$_state_;
-        const state_ptr parse_rmc_state_;
-        const state_ptr parse_crlf_state_;
-        const state_ptr parse_checksum_state_;
+        state_ptr const parse_$_state_;
+        state_ptr const parse_rmc_state_;
+        state_ptr const parse_crlf_state_;
+        state_ptr const parse_checksum_state_;
+
     protected:
         state* current_state {nullptr};
 
@@ -58,22 +57,22 @@ namespace serial
             return current_state->parse();
         }
 
-        [[nodiscard]] constexpr const state_ptr& get_parse_$_state() const noexcept
+        [[nodiscard]] constexpr state_ptr const & get_parse_$_state() const noexcept
         {
             return parse_$_state_;
         }
 
-        [[nodiscard]] constexpr const state_ptr& get_parse_rmc_state() const noexcept
+        [[nodiscard]] constexpr state_ptr const & get_parse_rmc_state() const noexcept
         {
             return parse_rmc_state_;
         }
 
-        [[nodiscard]] constexpr const state_ptr& get_parse_crlf_state() const noexcept
+        [[nodiscard]] constexpr state_ptr const & get_parse_crlf_state() const noexcept
         {
             return parse_crlf_state_;
         }
 
-        [[nodiscard]] constexpr const state_ptr& get_parse_checksum_state() const noexcept
+        [[nodiscard]] constexpr state_ptr const & get_parse_checksum_state() const noexcept
         {
             return parse_checksum_state_;
         }
