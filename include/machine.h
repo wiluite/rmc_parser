@@ -104,7 +104,7 @@ namespace serial
             return machine_memento<class_type>(*this);
         }
 
-        constexpr void rollback (machine_memento<class_type> mem) noexcept
+        constexpr void rollback (machine_memento<class_type> const & mem) noexcept
         {
             parent_class_type::reset(mem.b, mem.e);
         }

@@ -4,7 +4,7 @@
 #include <cmath>
 
 // This code is borrowed from minmea parser by Kosma Moczek and has been slightly modified.
-// It is armed with ring buffer iterator used throughout the parser environment.
+// It is armed with ring buffer iterator that is being used throughout the parser environment.
 
 namespace serial
 {
@@ -67,18 +67,6 @@ namespace serial
 
         while (*format) {
             char type = *format++;
-
-            if (type == ';') {
-                // All further fields are optional.
-                optional = true;
-                continue;
-            }
-
-            if (!field && !optional)
-            {
-                // Field requested but we ran out if input. Bail out.
-                goto parse_error;
-            }
 
             switch (type) {
                 case 'c': { // Single character field (char).
