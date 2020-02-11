@@ -146,10 +146,10 @@ namespace serial
     {
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
-        std::unique_ptr<machine_memento<MACHINE>> mm {nullptr};
+        machine_memento<MACHINE> mm;
         char msg_checksum[3] {0,0,'\0'};
 
-        [[nodiscard]] int calc_cs() const noexcept
+        [[nodiscard]] int8_t calc_cs() const noexcept
         {
             // not a range-based loop in order to not checking for '*' on each cycle
             int8_t sum = *machine_.begin();
@@ -162,7 +162,7 @@ namespace serial
         }
 
     public:
-        explicit ParseChecksumState(typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
+        explicit ParseChecksumState(typename parent_class_type::machine_type machine) : parent_class_type(machine), mm(machine) {}
 
         bool parse() noexcept final
         {
@@ -190,7 +190,7 @@ namespace serial
 
         void cleanup() noexcept final
         {
-            machine_.rollback(std::move(mm));
+            machine_.rollback(mm);
         }
     };
 }

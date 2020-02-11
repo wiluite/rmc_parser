@@ -99,14 +99,14 @@ namespace serial
             stop_iterator = it;
         }
 
-        constexpr std::unique_ptr<machine_memento<class_type>> check_point() const noexcept
+        constexpr machine_memento<class_type> check_point() const noexcept
         {
-            return std::make_unique<machine_memento<class_type>>(*this);
+            return machine_memento<class_type>(*this);
         }
 
-        constexpr void rollback (std::unique_ptr<machine_memento<class_type>> mem) noexcept
+        constexpr void rollback (machine_memento<class_type> mem) noexcept
         {
-            parent_class_type::reset(mem->b, mem->e);
+            parent_class_type::reset(mem.b, mem.e);
         }
 
     public:

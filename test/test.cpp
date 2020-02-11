@@ -1,7 +1,6 @@
 #define BOOST_TEST_MODULE boost_test_module_
 #include <boost/test/unit_test.hpp> // UTF ??
 #include <machine.h>
-#include <iostream>
 #include <parser.h>
 
 struct rmc_callback1 // callback for test_machine class
@@ -59,7 +58,6 @@ struct rotated_parse_test_machine : public serial::machine<bs, callback> {
         }
     }
 };
-
 
 BOOST_AUTO_TEST_CASE( test_empty_machine_data )
 {
@@ -289,7 +287,6 @@ constexpr void rotated_parse (std::integral_constant<int, T>  sz)
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
 }
 
-
 BOOST_AUTO_TEST_CASE( test_rotated_parse)
 {
     using namespace serial;
@@ -302,3 +299,37 @@ BOOST_AUTO_TEST_CASE( test_rotated_parse)
     rotated_parse(std::integral_constant<int, 100>());
 }
 
+
+std::size_t memory = 0;
+std::size_t alloc = 0;
+void* operator new(std::size_t s) noexcept(false)
+{
+    memory += s;
+    ++alloc;
+    return malloc(s);
+}
+void operator delete(void* p) throw()
+{
+    --alloc;
+    free(p);
+}
+std::tuple<std::size_t, std::size_t> memory_use()
+{
+    return {memory, alloc};
+}
+
+BOOST_AUTO_TEST_CASE (test_memory_allocations)
+{
+    using namespace serial;
+
+    test_machine m;
+    auto [mem1, alloc1] = memory_use();
+    char external_buffer[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
+    m.fill_data(external_buffer, sizeof(external_buffer));
+    auto const save_proc_call = m.proc_call;
+    while (m.parse()) ;
+    auto [mem2, alloc2] = memory_use();
+    BOOST_CHECK_EQUAL (mem1, mem2);
+    BOOST_CHECK_EQUAL (alloc1, alloc2);
+    BOOST_CHECK_EQUAL(m.proc_call, save_proc_call + 1);
+}
