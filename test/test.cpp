@@ -14,6 +14,8 @@ struct rmc_callback1 // callback for test_machine class
         BOOST_CHECK ((rmc.speed.value == 0) || (rmc.speed.value == 5));
         BOOST_CHECK (rmc.speed.scale == 10);
         BOOST_CHECK ((rmc.time.hours == 8) || (rmc.time.hours == 22));
+        BOOST_CHECK ((rmc.time.minutes == 18) || (rmc.time.minutes == 54));
+        BOOST_CHECK ((rmc.time.seconds == 36) || (rmc.time.seconds == 46));
         BOOST_CHECK (rmc.time.microseconds == 0);
         BOOST_CHECK_EQUAL (rmc.date.year, 19);
         BOOST_CHECK ((rmc.date.month == 9) || (rmc.date.month == 11));
@@ -322,8 +324,8 @@ BOOST_AUTO_TEST_CASE (test_memory_allocations)
 {
     using namespace serial;
 
-    test_machine m;
     auto [mem1, alloc1] = memory_use();
+    test_machine m;
     char external_buffer[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
     m.fill_data(external_buffer, sizeof(external_buffer));
     auto const save_proc_call = m.proc_call;

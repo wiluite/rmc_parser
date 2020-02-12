@@ -15,8 +15,6 @@ namespace serial
         virtual void cleanup() {}
     };
 
-    using state_ptr = std::unique_ptr<state>;
-
     template <typename MACHINE>
     class parent_state : public state
     {
@@ -58,7 +56,10 @@ namespace serial
         {
             machine_.save_start(machine_.begin());
         }
+        static char storage[100];
     };
+    template <typename M>
+    char Parse$State<M>::storage[100];
 
     template <typename MACHINE>
     class ParseRmcState final : public parent_state<MACHINE>
@@ -87,7 +88,11 @@ namespace serial
             }
             return false;
         }
+        static char storage[100];
     };
+    template <typename M>
+    char ParseRmcState<M>::storage[100];
+
 
     template <typename MACHINE>
     class ParseCrlfState final : public parent_state<MACHINE>
@@ -138,7 +143,10 @@ namespace serial
         {
             msg_size = 0;
         }
+        static char storage[100];
     };
+    template <typename M>
+    char ParseCrlfState<M>::storage[100];
 
     // caretaker (memento pattern)
     template <typename MACHINE>
@@ -192,6 +200,10 @@ namespace serial
         {
             machine_.rollback(mm);
         }
+        static char storage[100];
     };
+    template <typename M>
+    char ParseChecksumState<M>::storage[100];
+
 }
 

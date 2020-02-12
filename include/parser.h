@@ -37,12 +37,12 @@ namespace serial
         struct minmea_float variation;
     };
 
-    static inline bool minmea_isfield(char c) {
+    static inline bool minmea_isfield(char c) noexcept {
         return isprint((unsigned char) c) && c != ',' && c != '*';
     }
 
     template <typename RING_IT>
-    bool minmea_scan(RING_IT it, RING_IT it2, const char *format, ...)
+    bool minmea_scan(RING_IT it, RING_IT it2, const char *format, ...) noexcept
     {
         bool result = false;
         bool optional = false;
@@ -237,7 +237,7 @@ namespace serial
     }
 
     template <typename RING_IT>
-    bool minmea_parse_rmc(struct minmea_sentence_rmc *frame, RING_IT it, RING_IT end)
+    bool minmea_parse_rmc(struct minmea_sentence_rmc *frame, RING_IT it, RING_IT end) noexcept
     {
         char validity;
         int latitude_direction;
