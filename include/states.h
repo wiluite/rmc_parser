@@ -105,7 +105,8 @@ namespace serial
         {
             static constexpr uint8_t max_msg_size = 82;
 
-            if (msg_size > max_msg_size) {
+            if (msg_size > max_msg_size)
+            {
                 machine_.align();
                 machine_.set_state(machine_.get_parse_$_state());
                 return true;

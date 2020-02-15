@@ -2,6 +2,7 @@
 
 #include <cstdarg>
 #include <cmath>
+#include <cassert>
 
 // This code is borrowed from minmea parser by Kosma Moczek and has been slightly modified.
 // It is armed with ring buffer iterator that is being used throughout the parser environment.

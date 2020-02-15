@@ -1,7 +1,6 @@
 #define BOOST_TEST_MODULE boost_test_module_
 #include <boost/test/unit_test.hpp> // UTF ??
 #include <machine.h>
-#include <parser.h>
 
 struct rmc_callback1 // callback for test_machine class
 {
@@ -24,7 +23,6 @@ struct rmc_callback1 // callback for test_machine class
 };
 struct test_machine : public serial::machine<200, rmc_callback1> {
     using parent_class_type = serial::machine<200, rmc_callback1>;
-    using machine::fill_data;
     using machine::current_state;
     int proc_call = 0;
     void process() override // with parent's method called
@@ -45,7 +43,6 @@ struct rmc_callback2 // callback for rotated_parse_test_machine class
 template <size_t bs, class callback=rmc_callback2>
 struct rotated_parse_test_machine : public serial::machine<bs, callback> {
     using parent_class_type = serial::machine<bs, callback>;
-    using parent_class_type::fill_data;
     using parent_class_type::current_state;
     using parent_class_type::begin;
     using parent_class_type::end;
@@ -328,10 +325,8 @@ BOOST_AUTO_TEST_CASE (test_memory_allocations)
     test_machine m;
     char external_buffer[] = {"$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130919,011.3,E*6B\x0D\x0A"};
     m.fill_data(external_buffer, sizeof(external_buffer));
-    auto const save_proc_call = m.proc_call;
     while (m.parse()) ;
     auto [mem2, alloc2] = memory_use();
     BOOST_CHECK_EQUAL (mem1, mem2);
     BOOST_CHECK_EQUAL (alloc1, alloc2);
-    BOOST_CHECK_EQUAL(m.proc_call, save_proc_call + 1);
 }

@@ -3,6 +3,7 @@
 #include <ring_iter.h>
 #include <states.h>
 #include <parser.h>
+#include <functional>
 
 namespace serial
 {
@@ -17,14 +18,13 @@ namespace serial
     private:
         static char buffer [bs];
         using parent_class_type = ring_buffer_sequence<char, bs>;
-    protected:
-        using parent_class_type::fill_data;
     public:
         using parent_class_type::align;
         using parent_class_type::size;
         using parent_class_type::distance;
         using parent_class_type::begin;
         using parent_class_type::end;
+        using parent_class_type::fill_data;
         using const_iterator = typename parent_class_type::const_iterator;
     private:
         using class_type = machine;
@@ -86,8 +86,6 @@ namespace serial
 
         constexpr void set_state (state_ptr const & state ) noexcept
         {
-            assert(state);
-            assert(current_state);
             current_state->cleanup();
             current_state = state.get();
         }
