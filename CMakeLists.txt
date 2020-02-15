@@ -12,7 +12,7 @@ endif()
 
 include(external/external)
 
-set(SOURCE_FILES main.cpp include/machine.h include/states.h include/mach_mem.h include/parser.h)
+set(SOURCE_FILES main.cpp include/machine.h include/states.h include/mach_mem.h include/tokenizer.h)
 add_definitions(-Wno-deprecated )
 add_executable(sample ${SOURCE_FILES})
 
