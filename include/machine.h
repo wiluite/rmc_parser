@@ -1,8 +1,8 @@
 #pragma once
 
 #include <ring_iter.h>
-#include <states.h>
 #include <tokenizer.h>
+#include <states.h>
 #include <functional>
 
 namespace serial
@@ -103,7 +103,7 @@ namespace serial
             stop_iterator = it;
         }
 
-        constexpr machine_memento<class_type> check_point() const noexcept
+        [[nodiscard]] constexpr machine_memento<class_type> check_point() const noexcept
         {
             return machine_memento<class_type>(*this);
         }

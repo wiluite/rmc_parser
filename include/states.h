@@ -35,7 +35,7 @@ namespace serial
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
     public:
-        explicit Parse$State (typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
+        explicit Parse$State (decltype(machine_) machine) : parent_class_type(machine) {}
 
         bool parse() noexcept override
         {
@@ -67,11 +67,11 @@ namespace serial
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
     public:
-        explicit ParseRmcState (typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
+        explicit ParseRmcState (decltype(machine_) machine) : parent_class_type(machine) {}
 
         bool parse() noexcept override
         {
-            if (machine_.size() >= 5)
+            if (machine_.size() > 4)
             {
                 std::array<char, 3> constexpr rmc_seq {'R', 'M', 'C'};
                 auto const __ = std::search (machine_.begin(), machine_.end(), rmc_seq.begin(), rmc_seq.end());
@@ -100,44 +100,51 @@ namespace serial
         using parent_class_type = parent_state<MACHINE>;
         using parent_class_type::machine_;
 
-        uint8_t msg_size = 0;
-        bool on_max_msg_size() noexcept
-        {
-            static constexpr uint8_t max_msg_size = 82;
+        static constexpr uint8_t max_msg_size = 82;
 
+        void handle_adhesion() const noexcept // handles the absence of cr-lf between two messages
+        {
+            machine_.reset(machine_.get_start(), machine_.end());
+            assert(machine_.size() > (max_msg_size >> 1u));
+            machine_.align(machine_.begin() + (max_msg_size >> 1u));
+        }
+
+        uint16_t msg_size = 0;
+        [[nodiscard]] bool on_max_msg_size() const noexcept
+        {
             if (msg_size > max_msg_size)
             {
-                machine_.align();
+                handle_adhesion();
                 machine_.set_state(machine_.get_parse_$_state());
                 return true;
             }
             return false;
         }
     public:
-        explicit ParseCrlfState (typename parent_class_type::machine_type machine) : parent_class_type(machine) {}
+        explicit ParseCrlfState (decltype(machine_) machine)  : parent_class_type(machine) {}
 
         bool parse() noexcept override
         {
-            std::array<char, 2> constexpr crlf_seq {'\x0D', '\x0A'};
-            auto const __ = std::search (machine_.begin(), machine_.end(), crlf_seq.begin(), crlf_seq.end());
-
-            if (__ == machine_.end())
+            if (machine_.size() > 1)
             {
-                if (machine_.size() > 1)
+                std::array<char, 2> constexpr crlf_seq {'\x0D', '\x0A'};
+                auto const __ = std::search (machine_.begin(), machine_.end(), crlf_seq.begin(), crlf_seq.end());
+
+                if (__ == machine_.end())
                 {
                     auto const sz = machine_.size();
-                    machine_.align(std::begin(machine_)+(sz-1));
+                    machine_.align(std::begin(machine_) + (sz - 1));
                     msg_size += (sz - 1);
+                    return on_max_msg_size();
+                } else
+                {
+                    machine_.save_stop(__);
+                    machine_.align(__ + sizeof(crlf_seq));
+                    machine_.set_state(machine_.get_parse_checksum_state());
+                    return true;
                 }
-                return on_max_msg_size();
-            } else
-            {
-                machine_.save_stop(__);
-                machine_.align(__ + sizeof(crlf_seq));
-
-                machine_.set_state(machine_.get_parse_checksum_state());
-                return true;
             }
+            return false;
         }
 
         void cleanup() noexcept final
@@ -161,17 +168,17 @@ namespace serial
         [[nodiscard]] int8_t calc_cs() const noexcept
         {
             // not a range-based loop in order to not checking for '*' on each cycle
-            int8_t sum = *machine_.begin();
+            auto sum = *machine_.begin();
             std::for_each(machine_.begin()+1, machine_.begin()+(machine_.size()-3), [&sum](char elem)
                           {
-                              sum ^= elem;
+                              sum ^= (uint8_t)elem;
                           }
             );
             return sum;
         }
 
     public:
-        explicit ParseChecksumState(typename parent_class_type::machine_type machine) : parent_class_type(machine), mm(machine) {}
+        explicit ParseChecksumState(decltype(machine_) machine) : parent_class_type(machine), mm(machine) {}
 
         bool parse() noexcept final
         {
