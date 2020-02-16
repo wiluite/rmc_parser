@@ -13,11 +13,11 @@ namespace serial
     using state_ptr = std::unique_ptr<state, state_destructor_type>;
 
     template <size_t bs, class RMC_Callback>
-    class machine : private ring_buffer_sequence<char, bs, exception_checked_variant_type>
+    class machine : private ring_buffer_sequence<char, bs, exception_unchecked_variant_type>
     {
     private:
         static char buffer [bs];
-        using parent_class_type = ring_buffer_sequence<char, bs, exception_checked_variant_type>;
+        using parent_class_type = ring_buffer_sequence<char, bs, exception_unchecked_variant_type>;
     public:
         using parent_class_type::align;
         using parent_class_type::size;
@@ -46,7 +46,7 @@ namespace serial
         state* current_state {nullptr};
 
     public:
-        machine() : ring_buffer_sequence<char, bs>(buffer)
+        machine() : parent_class_type(buffer)
                 , parse_$_state_(new(parse_$_state_type::storage)parse_$_state_type(*this), [](void * obj){static_cast<parse_$_state_type*>(obj)->~parse_$_state_type();})
                 , parse_rmc_state_(new(parse_rmc_state_type::storage)parse_rmc_state_type(*this), [](void * obj){static_cast<parse_rmc_state_type*>(obj)->~parse_rmc_state_type();})
                 , parse_crlf_state_(new(parse_crlf_state_type::storage)parse_crlf_state_type(*this), [](void * obj){static_cast<parse_crlf_state_type*>(obj)->~parse_crlf_state_type();})
