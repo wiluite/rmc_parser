@@ -13,11 +13,11 @@ namespace serial
     using state_ptr = std::unique_ptr<state, state_destructor_type>;
 
     template <size_t bs, class RMC_Callback>
-    class machine : private ring_buffer_sequence<char, bs>
+    class machine : private ring_buffer_sequence<char, bs, exception_checked_variant_type>
     {
     private:
         static char buffer [bs];
-        using parent_class_type = ring_buffer_sequence<char, bs>;
+        using parent_class_type = ring_buffer_sequence<char, bs, exception_checked_variant_type>;
     public:
         using parent_class_type::align;
         using parent_class_type::size;
