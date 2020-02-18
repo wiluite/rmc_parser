@@ -102,19 +102,20 @@ namespace serial
 
         static constexpr uint8_t max_msg_size = 82;
 
-        void handle_adhesion() const noexcept // handles the absence of cr-lf between two messages
+        template <class IT>
+        void handle_adhesion(IT const & it) const noexcept // handles the absence of cr-lf between two messages
         {
-            machine_.reset(machine_.get_start(), machine_.end());
-            assert(machine_.size() > (max_msg_size >> 1u));
+            machine_.reset(machine_.get_start(), it);
             machine_.align(machine_.begin() + (max_msg_size >> 1u));
         }
 
         uint16_t msg_size = 0;
-        [[nodiscard]] bool on_max_msg_size() const noexcept
+        template <class IT>
+        [[nodiscard]] bool on_max_msg_size(IT const & it) const noexcept
         {
             if (msg_size > max_msg_size)
             {
-                handle_adhesion();
+                handle_adhesion(it);
                 machine_.set_state(machine_.get_parse_$_state());
                 return true;
             }
@@ -135,9 +136,20 @@ namespace serial
                     auto const sz = machine_.size();
                     machine_.align(std::begin(machine_) + (sz - 1));
                     msg_size += (sz - 1);
-                    return on_max_msg_size();
+                    return on_max_msg_size(machine_.end());
                 } else
                 {
+                    machine_memento<MACHINE> mm(machine_);
+                    mm = machine_.check_point();
+                    machine_.unchecked_reset(machine_.get_start(), __);
+                    msg_size = machine_.size();
+                    machine_.unchecked_rollback(mm);
+
+                    if (on_max_msg_size(__ + sizeof(crlf_seq)))
+                    {
+                        return true;
+                    }
+
                     machine_.save_stop(__);
                     machine_.align(__ + sizeof(crlf_seq));
                     machine_.set_state(machine_.get_parse_checksum_state());

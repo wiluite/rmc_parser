@@ -12,12 +12,15 @@ namespace serial
     using state_destructor_type = std::function<void(void*)>;
     using state_ptr = std::unique_ptr<state, state_destructor_type>;
 
+    template <size_t bs, class E = exception_checked_variant_type>
+    using machine_implementation_type = ring_buffer_sequence<char, bs, E>;
+
     template <size_t bs, class RMC_Callback>
-    class machine : private ring_buffer_sequence<char, bs, exception_unchecked_variant_type>
+    class machine : private machine_implementation_type<bs>
     {
     private:
         static char buffer [bs];
-        using parent_class_type = ring_buffer_sequence<char, bs, exception_unchecked_variant_type>;
+        using parent_class_type = machine_implementation_type<bs>;
     public:
         using parent_class_type::align;
         using parent_class_type::size;
@@ -45,6 +48,11 @@ namespace serial
     protected:
         state* current_state {nullptr};
 
+        static_assert(sizeof(parse_$_state_type) <= sizeof(parse_$_state_type::storage));
+        static_assert(sizeof(parse_rmc_state_type) <= sizeof(parse_rmc_state_type::storage));
+        static_assert(sizeof(parse_crlf_state_type) <= sizeof(parse_crlf_state_type::storage));
+        static_assert(sizeof(parse_checksum_state_type) <= sizeof(parse_checksum_state_type::storage));
+
     public:
         machine() : parent_class_type(buffer)
                 , parse_$_state_(new(parse_$_state_type::storage)parse_$_state_type(*this), [](void * obj){static_cast<parse_$_state_type*>(obj)->~parse_$_state_type();})
@@ -52,10 +60,6 @@ namespace serial
                 , parse_crlf_state_(new(parse_crlf_state_type::storage)parse_crlf_state_type(*this), [](void * obj){static_cast<parse_crlf_state_type*>(obj)->~parse_crlf_state_type();})
                 , parse_checksum_state_(new(parse_checksum_state_type::storage)parse_checksum_state_type(*this), [](void * obj){static_cast<parse_checksum_state_type*>(obj)->~parse_checksum_state_type();})
         {
-            static_assert(sizeof(parse_$_state_type) <= sizeof(parse_$_state_type::storage));
-            static_assert(sizeof(parse_rmc_state_type) <= sizeof(parse_rmc_state_type::storage));
-            static_assert(sizeof(parse_crlf_state_type) <= sizeof(parse_crlf_state_type::storage));
-            static_assert(sizeof(parse_checksum_state_type) <= sizeof(parse_checksum_state_type::storage));
             current_state = parse_$_state_.get();
         }
 
@@ -111,6 +115,11 @@ namespace serial
         constexpr void rollback (machine_memento<class_type> const & mem) noexcept
         {
             parent_class_type::reset(mem.b, mem.e);
+        }
+
+        constexpr void unchecked_rollback (machine_memento<class_type> const & mem) noexcept
+        {
+            parent_class_type::unchecked_reset(mem.b, mem.e);
         }
 
     public:
