@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE( test_$_and_same_state )
     BOOST_REQUIRE_NO_THROW(parse_result = m.parse());
     BOOST_REQUIRE_EQUAL(parse_result, false);
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
-    BOOST_REQUIRE_EQUAL(m.size() , 0);
+    BOOST_REQUIRE_EQUAL(m.size() , 0u);
 }
 
 BOOST_AUTO_TEST_CASE( test_$_and_switch_state )
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE( test_$_and_switch_state )
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_rmc_state().get());
     BOOST_REQUIRE_EQUAL (*m.get_start() ,(int)'G');
     BOOST_REQUIRE_EQUAL (*m.begin() ,(int)'G');
-    BOOST_REQUIRE_EQUAL(m.size() , 2);
+    BOOST_REQUIRE_EQUAL(m.size() , 2u);
 }
 
 BOOST_AUTO_TEST_CASE( test_insufficient_rmc_and_same_state )
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE( test_insufficient_rmc_and_same_state )
     while (m.parse()) {}
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_rmc_state().get());
-    BOOST_REQUIRE_EQUAL(m.size() , 3);
+    BOOST_REQUIRE_EQUAL(m.size() , 3u);
     BOOST_REQUIRE (m.get_start() == m.begin());
 }
 
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE( test_wrong_rmc_and_switch_$_state )
 
     BOOST_REQUIRE(!pres);
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
-    BOOST_REQUIRE_EQUAL(m.size() , 0);
+    BOOST_REQUIRE_EQUAL(m.size() , 0u);
     BOOST_REQUIRE (m.get_start() != m.begin());
 
 }
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE( test_rmc_and_switch_state )
     while (m.parse()) {}
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_crlf_state().get());
-    BOOST_REQUIRE_EQUAL(m.size() , 1);
+    BOOST_REQUIRE_EQUAL(m.size() , 1u);
     BOOST_REQUIRE_EQUAL(*m.begin() , '_');
 }
 
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE( test_crlf_state_no_CR_LF_and_max_search_size )
     while (m.parse()) {}
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
-    BOOST_REQUIRE_EQUAL(m.size() , 0);
+    BOOST_REQUIRE_EQUAL(m.size() , 0u);
 }
 
 BOOST_AUTO_TEST_CASE( test_crlf_state_CR_only )
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE( test_crlf_state_CR_only )
     while (m.parse()) {}
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_crlf_state().get());
-    BOOST_REQUIRE_EQUAL(m.size() , 1);
+    BOOST_REQUIRE_EQUAL(m.size() , 1u);
     BOOST_REQUIRE_EQUAL(*m.begin() , '\x0D');
 }
 
@@ -185,9 +185,9 @@ BOOST_AUTO_TEST_CASE( test_crlf_state_CR_LF )
 
     m.fill_data(external_buffer, sizeof(external_buffer)-1);
 
-    m.parse(); // $
-    m.parse(); // RMC
-    auto pres = m.parse(); // CRLF
+    auto pres = m.parse(); // $
+    pres = m.parse(); // RMC
+    pres = m.parse(); // CRLF
 
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_checksum_state().get());
@@ -202,14 +202,14 @@ BOOST_AUTO_TEST_CASE( test_checksum_state_1)
 
     m.fill_data(external_buffer, sizeof(external_buffer)-1);
 
-    m.parse(); // $
-    m.parse(); // RMC
-    m.parse(); // CRLF
-    auto pres = m.parse(); //CS -> $
+    auto pres = m.parse(); // $
+    pres = m.parse(); // RMC
+    pres = m.parse(); // CRLF
+    pres = m.parse(); //CS -> $
 
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
     BOOST_REQUIRE (pres);
-    BOOST_REQUIRE_EQUAL (m.size(), 0);
+    BOOST_REQUIRE_EQUAL (m.size(), 0u);
 }
 
 BOOST_AUTO_TEST_CASE( test_checksum_state_2)
@@ -222,15 +222,15 @@ BOOST_AUTO_TEST_CASE( test_checksum_state_2)
 
     auto const save_proc_call = m.proc_call;
 
-    m.parse(); // $
-    m.parse(); // RMC
-    m.parse(); // CRLF
-    auto pres = m.parse(); //CS -> $
+    auto pres = m.parse(); // $
+    pres = m.parse(); // RMC
+    pres = m.parse(); // CRLF
+    pres = m.parse(); //CS -> $
 
     BOOST_REQUIRE_EQUAL(m.proc_call, save_proc_call);
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());
     BOOST_REQUIRE (pres);
-    BOOST_REQUIRE_EQUAL (m.size(), 0);
+    BOOST_REQUIRE_EQUAL (m.size(), 0u);
 }
 
 BOOST_AUTO_TEST_CASE( test_successful_checksum)
@@ -241,10 +241,10 @@ BOOST_AUTO_TEST_CASE( test_successful_checksum)
     m.fill_data(external_buffer, sizeof(external_buffer));
 
     auto const save_proc_call = m.proc_call;
-    m.parse(); // $
-    m.parse(); // RMC
-    m.parse(); // CRLF
-    auto pres = m.parse(); // CS -> $
+    auto pres = m.parse(); // $
+    pres = m.parse(); // RMC
+    pres = m.parse(); // CRLF
+    pres = m.parse(); // CS -> $
 
     BOOST_REQUIRE_EQUAL(m.proc_call, save_proc_call + 1);
     BOOST_REQUIRE_EQUAL(m.current_state, m.get_parse_$_state().get());

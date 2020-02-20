@@ -39,7 +39,7 @@ namespace serial
         struct minmea_float variation;
     };
 
-    static inline bool minmea_isfield(char c) noexcept {
+    bool minmea_isfield(char c) noexcept {
         return isprint((unsigned char) c) && c != ',' && c != '*';
     }
 
@@ -47,7 +47,6 @@ namespace serial
     bool minmea_scan(RING_IT it, RING_IT it2, const char *format, ...) noexcept
     {
         bool result = false;
-        bool optional = false;
         va_list ap;
         va_start(ap, format);
 
@@ -156,8 +155,8 @@ namespace serial
                     }
                     if (sign)
                         value *= sign;
-
-                    *va_arg(ap, struct minmea_float *) = (struct minmea_float) {value, scale};
+                    
+                    *va_arg(ap, struct minmea_float *) = minmea_float  {value, scale};
                 } break;
 
                 case 'D': { // Date (int, int, int), -1 if empty.
