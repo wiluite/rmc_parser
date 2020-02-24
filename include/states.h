@@ -3,7 +3,14 @@
 #include <memory>
 #include <iostream>
 #include <ring_iter.h>
-#include <mach_mem.h>
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4625)
+#pragma warning(disable : 4626)
+#pragma warning(disable : 5026)
+#pragma warning(disable : 5027)
+#pragma warning(disable : 4820)
+#endif
 
 namespace serial
 {

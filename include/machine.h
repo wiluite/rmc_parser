@@ -2,8 +2,13 @@
 
 #include <ring_iter.h>
 #include <tokenizer.h>
+#include <mach_mem.h>
 #include <states.h>
 #include <functional>
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4355)
+#endif
 
 namespace serial
 {
@@ -62,6 +67,7 @@ namespace serial
         {
             current_state = parse_$_state_.get();
         }
+        virtual ~machine() = default;
 
         [[nodiscard]] constexpr bool parse() const noexcept
         {
