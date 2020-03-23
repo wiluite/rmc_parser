@@ -63,10 +63,10 @@ namespace serial
         {
             machine_.save_start(machine_.begin());
         }
-        static char storage[100];
+        static char storage[100] __attribute__ ((aligned));
     };
     template <typename M>
-    char Parse$State<M>::storage[100];
+    char Parse$State<M>::storage[100] __attribute__ ((aligned));
 
     template <typename MACHINE>
     class ParseRmcState final : public parent_state<MACHINE>
@@ -95,10 +95,10 @@ namespace serial
             }
             return false;
         }
-        static char storage[100];
+        static char storage[100] __attribute__ ((aligned));
     };
     template <typename M>
-    char ParseRmcState<M>::storage[100];
+    char ParseRmcState<M>::storage[100] __attribute__ ((aligned));
 
 
     template <typename MACHINE>
@@ -170,10 +170,10 @@ namespace serial
         {
             msg_size = 0;
         }
-        static char storage[100];
+        static char storage[100] __attribute__ ((aligned));
     };
     template <typename M>
-    char ParseCrlfState<M>::storage[100];
+    char ParseCrlfState<M>::storage[100] __attribute__ ((aligned));
 
     // caretaker (memento pattern)
     template <typename MACHINE>
@@ -227,10 +227,10 @@ namespace serial
         {
             machine_.rollback(mm);
         }
-        static char storage[100];
+        static char storage[100] __attribute__ ((aligned));
     };
     template <typename M>
-    char ParseChecksumState<M>::storage[100];
+    char ParseChecksumState<M>::storage[100] __attribute__ ((aligned));
 
 }
 
