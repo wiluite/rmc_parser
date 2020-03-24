@@ -17,7 +17,7 @@ namespace serial
     using state_destructor_type = std::function<void(void*)>;
     using state_ptr = std::unique_ptr<state, state_destructor_type>;
 
-    template <size_t bs, class E = exception_checked_variant_type>
+    template <size_t bs, class E = exception_unchecked_variant_type>
     using machine_implementation_type = ring_buffer_sequence<char, bs, E>;
 
     template <size_t bs, class RMC_Callback>

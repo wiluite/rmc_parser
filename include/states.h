@@ -129,7 +129,7 @@ namespace serial
             return false;
         }
     public:
-        explicit ParseCrlfState (decltype(machine_) machine)  : parent_class_type(machine) {}
+        explicit ParseCrlfState (decltype(machine_) machine) : parent_class_type(machine) {}
 
         bool parse() noexcept override
         {
@@ -152,14 +152,12 @@ namespace serial
                     msg_size = machine_.size();
                     machine_.unchecked_rollback(mm);
 
-                    if (on_max_msg_size(__ + sizeof(crlf_seq)))
+                    if (!on_max_msg_size(__ + sizeof(crlf_seq)))
                     {
-                        return true;
+                        machine_.save_stop(__);
+                        machine_.align(__ + sizeof(crlf_seq));
+                        machine_.set_state(machine_.get_parse_checksum_state());
                     }
-
-                    machine_.save_stop(__);
-                    machine_.align(__ + sizeof(crlf_seq));
-                    machine_.set_state(machine_.get_parse_checksum_state());
                     return true;
                 }
             }
